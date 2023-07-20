@@ -4,7 +4,7 @@
   "name": "Timecoder",
   "author": "Arimodu, DanielDuel",
   "version": "0.1.0",
-  "description": "",
+  "description": "Integration for Timecoder, the system to make viewing and sharing your stream's VODs easier.",
   "gameVersion": "1.19.1",
   "dependsOn": {
     "BSIPA": "^4.2.0",
