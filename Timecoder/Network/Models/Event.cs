@@ -39,6 +39,7 @@ namespace Timecoder.Network.Models
 
     public enum EventName
     {
-        Song
+        Song,
+        Replay
     }
 }

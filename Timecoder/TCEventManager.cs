@@ -1,12 +1,13 @@
 ﻿using System;
 using Zenject;
-using Timecoder.Configuration;
-using Timecoder.Network;
 using BS_Utils.Utilities;
 using SiraUtil.Logging;
-using Timecoder.Network.Models;
 using Newtonsoft.Json.Linq;
+using Timecoder.Network;
+using Timecoder.Network.Models;
 using Timecoder.Network.Models.Packets;
+using static Timecoder.Utilities.Utils;
+using Newtonsoft.Json;
 
 namespace Timecoder
 {
@@ -22,7 +23,10 @@ namespace Timecoder
         {
             _client = client;
             _logger = log;
+
+#if DEBUG
             _logger.DebugMode = true;
+#endif
         }
 
         public void Initialize()
@@ -87,7 +91,7 @@ namespace Timecoder
             }
         }
 
-        private async void OnLevelFailed(StandardLevelScenesTransitionSetupDataSO arg1, LevelCompletionResults arg2)
+        private async void OnLevelFailed(StandardLevelScenesTransitionSetupDataSO arg1, LevelCompletionResults levelCompletionResults)
         {
             if (Session == null || SongEventId == string.Empty)
             {
@@ -101,7 +105,7 @@ namespace Timecoder
             { 
                 Session = Session, 
                 Event = new Event(SongEventId), 
-                SubEvent = new SubEvent<SongEnd>(SubEventName.End, new SongEnd(SongEnd.SongEndReason.Failed, time)) 
+                SubEvent = new SubEvent<SongEnd>(SubEventName.End, new SongEnd(new SongResults(levelCompletionResults), SongEnd.SongEndReason.Failed, time)) 
             };
 
             var response = await _client.SendSubEventData(packet.ToString());
@@ -115,7 +119,7 @@ namespace Timecoder
             }
         }
 
-        private async void OnLevelQuit(StandardLevelScenesTransitionSetupDataSO arg1, LevelCompletionResults arg2)
+        private async void OnLevelQuit(StandardLevelScenesTransitionSetupDataSO arg1, LevelCompletionResults levelCompletionResults)
         {
             if (Session == null || SongEventId == string.Empty)
             {
@@ -129,7 +133,7 @@ namespace Timecoder
             {
                 Session = Session,
                 Event = new Event(SongEventId),
-                SubEvent = new SubEvent<SongEnd>(SubEventName.End, new SongEnd(SongEnd.SongEndReason.Quit, time))
+                SubEvent = new SubEvent<SongEnd>(SubEventName.End, new SongEnd(new SongResults(levelCompletionResults), SongEnd.SongEndReason.Quit, time))
             };
 
             var response = await _client.SendSubEventData(packet.ToString());
@@ -143,7 +147,7 @@ namespace Timecoder
             }
         }
 
-        private async void OnLevelCleared(StandardLevelScenesTransitionSetupDataSO arg1, LevelCompletionResults arg2)
+        private async void OnLevelCleared(StandardLevelScenesTransitionSetupDataSO arg1, LevelCompletionResults levelCompletionResults)
         {
             if (Session == null || SongEventId == string.Empty)
             {
@@ -157,7 +161,7 @@ namespace Timecoder
             {
                 Session = Session,
                 Event = new Event(SongEventId),
-                SubEvent = new SubEvent<SongEnd>(SubEventName.End, new SongEnd(SongEnd.SongEndReason.Finished, time))
+                SubEvent = new SubEvent<SongEnd>(SubEventName.End, new SongEnd(new SongResults(levelCompletionResults), SongEnd.SongEndReason.Cleared, time))
             };
 
             var response = await _client.SendSubEventData(packet.ToString());
@@ -192,11 +196,11 @@ namespace Timecoder
 
             var time = DateTime.UtcNow;
 
-            var packet = new Packet<object, SongStart>
+            var packet = new Packet<SongInfo, SongStart>
             {
                 Session = Session,
-                Event = new Event<object>(EventName.Song, new object()),
-                SubEvent = new SubEvent<SongStart>(SubEventName.Start, new SongStart(song, time))
+                Event = new Event<SongInfo>(IsReplay() ? EventName.Replay : EventName.Song, song),
+                SubEvent = new SubEvent<SongStart>(SubEventName.Start, new SongStart(time))
             };
 
             var response = await _client.SendSubEventData(packet.ToString());

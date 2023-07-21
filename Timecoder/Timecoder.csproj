@@ -40,6 +40,11 @@
     <DisableZipRelease>True</DisableZipRelease>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="0Harmony">
+      <HintPath>$(BeatSaberDir)\Libs\0Harmony.dll</HintPath>
+      <Private>False</Private>
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
     <Reference Include="BeatmapCore">
       <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\BeatmapCore.dll</HintPath>
       <Private>False</Private>
@@ -137,6 +142,8 @@
     <Compile Include="Network\Models\Packets\SongStart.cs" />
     <Compile Include="Network\Models\Session.cs" />
     <Compile Include="Network\Models\SongInfo.cs" />
+    <Compile Include="Network\Models\SongModifiers.cs" />
+    <Compile Include="Network\Models\SongResults.cs" />
     <Compile Include="Network\Models\SubEvent.cs" />
     <Compile Include="Network\Models\UserToken.cs" />
     <Compile Include="Network\TCClient.cs" />
@@ -146,6 +153,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Configuration\TCConfig.cs" />
     <Compile Include="TCEventManager.cs" />
+    <Compile Include="Utilities\Utils.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="manifest.json" />

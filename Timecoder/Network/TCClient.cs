@@ -20,6 +20,10 @@ namespace Timecoder.Network
         {
             Config = config;
             _logger = log;
+
+#if DEBUG
+            _logger.DebugMode = true;
+#endif
         }
 
         public void Initialize()

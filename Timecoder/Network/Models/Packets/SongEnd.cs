@@ -8,17 +8,19 @@ namespace Timecoder.Network.Models.Packets
     {
         public enum SongEndReason
         {
-            Finished,
+            Cleared,
             Quit,
             Failed
         }
 
+        public SongResults Results { get; }
         public string Reason { get; }
         public DateTime EndTime { get; }
         public long Timestamp { get; }
 
-        public SongEnd(SongEndReason reason, DateTime endTime)
+        public SongEnd(SongResults results, SongEndReason reason, DateTime endTime)
         {
+            Results = results;
             Reason = reason.ToString();
             EndTime = endTime;
             Timestamp = endTime.ToUnixTime();
