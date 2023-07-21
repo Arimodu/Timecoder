@@ -3,7 +3,7 @@
   "id": "Timecoder",
   "name": "Timecoder",
   "author": "Arimodu, DanielDuel",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Integration for Timecoder, the system to make viewing and sharing your stream's VODs easier.",
   "gameVersion": "1.19.1",
   "dependsOn": {
