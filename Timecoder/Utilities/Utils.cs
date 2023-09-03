@@ -1,51 +1,39 @@
-﻿using System.Reflection;
-using HarmonyLib;
+﻿using HarmonyLib;
+using IPA.Loader;
+using System;
+using System.Linq;
+using System.Reflection;
+using Timecoder.Network.Models;
 
 namespace Timecoder.Utilities
 {
     internal class Utils
     {
-        // Stolen from SongPlayHistory
-        // REPOSITORY: https://github.com/qe201020335/SongPlayHistory
-        // FILE: https://github.com/qe201020335/SongPlayHistory/blob/master/SongPlayHistory/Utils/Utils.cs
-        // LICENSE: https://github.com/qe201020335/SongPlayHistory/blob/master/LICENSE
-
-        private static readonly MethodBase ScoreSaber_playbackEnabled =
-            AccessTools.Method("ScoreSaber.Core.ReplaySystem.HarmonyPatches.PatchHandleHMDUnmounted:Prefix");
-
-        private static readonly MethodBase GetBeatLeaderIsStartedAsReplay =
-            AccessTools.Property(AccessTools.TypeByName("BeatLeader.Replayer.ReplayerLauncher"), "IsStartedAsReplay")?.GetGetMethod(false);
-
-
-        internal static bool IsReplay()
+        internal static ReplaySource GetReplaySource()
         {
-            var ssReplay = ScoreSaber_playbackEnabled != null && (bool)ScoreSaber_playbackEnabled.Invoke(null, null) == false;
-
-            var blReplay = GetBeatLeaderIsStartedAsReplay != null && (bool)GetBeatLeaderIsStartedAsReplay.Invoke(null, null);
-
-            return ssReplay || blReplay;
+            if (IsScoreSaberReplay()) return ReplaySource.ScoreSaber;
+            else if (IsBeatLeaderReplay()) return ReplaySource.BeatLeader;
+            else return ReplaySource.None;
         }
 
-        // ----------------------------------
-        // FILE: https://github.com/qe201020335/SongPlayHistory/blob/master/SongPlayHistory/Utils/ScoreUtils.cs
+        internal static bool IsBeatLeaderReplay() => 
+            PluginManager.EnabledPlugins.Any(plugin => plugin.Id == "BeatLeader") 
+            && BeatLeader.Replayer.ReplayerLauncher.IsStartedAsReplay;
 
-        internal static int CalculateV2MaxScore(int noteCount)
+        internal static bool IsScoreSaberReplay()
         {
-            int effectiveNoteCount = 0;
-            int multiplier;
-            for (multiplier = 1; multiplier < 8; multiplier *= 2)
+            if (PluginManager.EnabledPlugins.Any(plugin => plugin.Id == "ScoreSaber"))
             {
-                if (noteCount < multiplier * 2)
-                {
-                    effectiveNoteCount += multiplier * noteCount;
-                    noteCount = 0;
-                    break;
-                }
-                effectiveNoteCount += multiplier * multiplier * 2 + multiplier;
-                noteCount -= multiplier * 2;
+                return (bool)PluginManager.GetPluginFromId("ScoreSaber")
+                    .Assembly.GetType("ScoreSaber.Plugin.ReplayState")
+                    .GetProperty("IsPlaybackEnabled")
+                    .GetValue(null, null);
             }
-            effectiveNoteCount += noteCount * multiplier;
-            return effectiveNoteCount * 115;
+            // Default to false if ScoreSaber is not installed
+            return false;
         }
+
+        internal static bool IsReplay() => IsScoreSaberReplay() || IsBeatLeaderReplay();
+        internal static int GetMaxScore() => ScoreModel.ComputeMaxMultipliedScoreForBeatmap(BS_Utils.Plugin.LevelData.GameplayCoreSceneSetupData.transformedBeatmapData);
     }
 }

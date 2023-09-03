@@ -8,8 +8,8 @@ namespace Timecoder.Network.Models
     internal class SongResults
     {
         public int Score { get; }
-        public int CalculatedMaxScoreV2 { get; }
-        public float CalculatedAccuracyV2 { get; }
+        public int MaxScore { get; }
+        public float Accuracy { get; }
         public int Missed { get; }
         public int BadCuts { get; }
         public int GoodCuts { get; }
@@ -21,8 +21,8 @@ namespace Timecoder.Network.Models
         public SongResults(LevelCompletionResults results)
         {
             Score = results.modifiedScore;
-            CalculatedMaxScoreV2 = CalculateV2MaxScore(results.goodCutsCount + results.badCutsCount + results.missedCount);
-            CalculatedAccuracyV2 = (float)Decimal.Divide(Score, CalculatedMaxScoreV2) * 100;
+            MaxScore = GetMaxScore();
+            Accuracy = (float)Decimal.Divide(Score, MaxScore) * 100;
             Missed = results.missedCount;
             BadCuts = results.badCutsCount;
             GoodCuts = results.goodCutsCount;
