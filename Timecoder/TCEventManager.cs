@@ -9,20 +9,24 @@ using Timecoder.Network.Models.Packets;
 using static Timecoder.Utilities.Utils;
 using System.Threading.Tasks;
 using ReplayInfo = Timecoder.Network.Models.ReplayInfo;
+using System.Text;
+using static SliderController.Pool;
 
 namespace Timecoder
 {
     internal class TCEventManager : IInitializable
     {
-        private readonly TCClient _client;
+        private readonly UWRWrapper UWR;
         private readonly SiraLog SiraLogger;
 
         private Session Session;
         private string SongEventId;
+        private bool IsReplay;
+        private StringBuilder EndNotice;
 
-        internal TCEventManager(TCClient client, SiraLog log) 
+        internal TCEventManager(UWRWrapper uwr, SiraLog log) 
         {
-            _client = client;
+            UWR = uwr;
             SiraLogger = log;
 
 #if DEBUG
@@ -30,10 +34,7 @@ namespace Timecoder
 #endif
         }
 
-        public void Initialize()
-        {
-            InitializeAsync();
-        }
+        public void Initialize() => InitializeAsync();
 
         private async void InitializeAsync()
         {
@@ -64,7 +65,7 @@ namespace Timecoder
 
         public async Task<bool> SetupSession()
         {
-            var response = await _client.GetSession();
+            var response = await UWR.GetSession();
 
             if (!response.IsSuccess)
             {
@@ -72,7 +73,7 @@ namespace Timecoder
                 return false; //For now anyway, not handling this
             }
 
-            SiraLogger.Debug(response);
+            //SiraLogger.Debug($"Session response:\n{response}");
 
             // Parse the JSON response using JObject
             var parsedObject = JObject.Parse(response.ResponseData);
@@ -102,12 +103,15 @@ namespace Timecoder
                 SubEvent = new SubEvent<SongRestart>(SubEventName.Restart, new SongRestart(time))
             };
 
+
+            SiraLogger.Logger.Notice($"Restarted {EndNotice}");
+
             if (!await SendLevelEndData(packet)) return;
         }
 
         private async Task<bool> SendLevelEndData<T>(Packet<T> packet)
         {
-            var response = await _client.SendSubEventData(packet.ToString());
+            var response = await UWR.SendSubEventData(packet);
 
             if (!response.IsSuccess)
             {
@@ -115,23 +119,26 @@ namespace Timecoder
                 return false;
             }
 
-            SiraLogger.Debug(response.ToString());
+            //SiraLogger.Debug(response.ToString());
 
             return true;
         }
 
         private async void OnLevelFailed(StandardLevelScenesTransitionSetupDataSO arg1, LevelCompletionResults levelCompletionResults)
         {
+            EndNotice.Insert(0, "Failed ");
             await SetupLevelEndData(levelCompletionResults, SongEnd.SongEndReason.Failed);
         }
 
         private async void OnLevelQuit(StandardLevelScenesTransitionSetupDataSO arg1, LevelCompletionResults levelCompletionResults)
         {
+            EndNotice.Insert(0, IsReplay ? "Finished " : "Quit ");
             await SetupLevelEndData(levelCompletionResults, SongEnd.SongEndReason.Quit);
         }
 
         private async void OnLevelCleared(StandardLevelScenesTransitionSetupDataSO arg1, LevelCompletionResults levelCompletionResults)
         {
+            EndNotice.Insert(0, "Cleared ");
             await SetupLevelEndData(levelCompletionResults, SongEnd.SongEndReason.Cleared);
         }
 
@@ -139,7 +146,7 @@ namespace Timecoder
         {
             if (Session == null || SongEventId == string.Empty)
             {
-                SiraLogger.Warn($"Empty session or song not started on LevelRestarted");
+                //SiraLogger.Warn($"Empty session, or song not started on LevelRestarted");
                 return; // We dont want to do anything when we dont have a session
             }
 
@@ -152,6 +159,13 @@ namespace Timecoder
                 SubEvent = new SubEvent<SongEnd>(SubEventName.End, new SongEnd(new SongResults(levelCompletionResults), reason, time))
             };
 
+            // Print the end notice
+            SiraLogger.Logger.Notice(EndNotice.ToString());
+
+            // Clear song event ID, we dont need it anymore
+            // Should fix double event invocation, tho this is an ugly fix....
+            SongEventId = string.Empty;
+
             if (!await SendLevelEndData(packet)) return;
         }
 
@@ -163,23 +177,27 @@ namespace Timecoder
                 return; // We don't want to do anything when we don't have a session
             }
 
-            if (IsReplay()) OnReplayStarted();
+            IsReplay = IsReplay();
+
+            if (IsReplay) OnReplayStarted();
             else OnSongStarted();
         }
 
         public void OnSongStarted()
         {
             var beatmapLevel = BS_Utils.Plugin.LevelData.GameplayCoreSceneSetupData.previewBeatmapLevel;
-            var song = new SongInfo(
+            var songInfo = new SongInfo(
                 beatmapLevel.levelID,
                 beatmapLevel.songName,
                 beatmapLevel.songSubName,
                 beatmapLevel.songAuthorName,
                 beatmapLevel.levelAuthorName);
 
-            SiraLogger.Logger.Notice($"Started level: {song}");
+            SiraLogger.Logger.Notice($"Started level: {songInfo}");
+            EndNotice = new StringBuilder();
+            EndNotice.Append($"level: {songInfo}");
 
-            SendLevelStartData(song);
+            SendLevelStartData(songInfo);
         }
 
         public void OnReplayStarted()
@@ -196,6 +214,8 @@ namespace Timecoder
                 replaySource);
 
             SiraLogger.Logger.Notice($"Started replay: {replayInfo}");
+            EndNotice = new StringBuilder();
+            EndNotice.Append($"replay: {replayInfo}");
 
             SendLevelStartData(replayInfo);
         }
@@ -211,7 +231,7 @@ namespace Timecoder
                 SubEvent = new SubEvent<SongStart>(SubEventName.Start, new SongStart(time))
             };
 
-            var response = await _client.SendSubEventData(packet.ToString());
+            var response = await UWR.SendSubEventData(packet);
 
             if (!response.IsSuccess)
             {
@@ -219,7 +239,7 @@ namespace Timecoder
                 return;
             }
 
-            SiraLogger.Debug(response.ToString());
+            //SiraLogger.Debug(response.ToString());
 
             // Parse the JSON response using JObject
             var parsedObject = JObject.Parse(response.ResponseData);

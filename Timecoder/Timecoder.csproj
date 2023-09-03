@@ -155,7 +155,7 @@
     <Compile Include="Network\Models\SongResults.cs" />
     <Compile Include="Network\Models\SubEvent.cs" />
     <Compile Include="Network\Models\UserToken.cs" />
-    <Compile Include="Network\TCClient.cs" />
+    <Compile Include="Network\UWRWrapper.cs" />
     <Compile Include="Network\LocalServer.cs" />
     <Compile Include="Network\Models\ApiResponse.cs" />
     <Compile Include="Plugin.cs" />

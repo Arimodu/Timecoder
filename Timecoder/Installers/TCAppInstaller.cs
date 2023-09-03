@@ -16,7 +16,7 @@ namespace Timecoder.Installers
         public override void InstallBindings()
         {
             Container.BindInstance(Config);
-            Container.BindInterfacesAndSelfTo<TCClient>().AsSingle();
+            Container.BindInterfacesAndSelfTo<UWRWrapper>().AsSingle();
         }
     }
 }

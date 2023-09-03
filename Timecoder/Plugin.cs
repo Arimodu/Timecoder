@@ -20,6 +20,7 @@ namespace Timecoder
         {
             zenject.UseLogger(logger);
             zenject.UseMetadataBinder<Plugin>();
+            zenject.UseHttpService();
 
             zenject.Install<TCAppInstaller>(Location.App, conf.Generated<TCConfig>());
             zenject.Install<TCMenuInstaller>(Location.Menu);
