@@ -13,5 +13,7 @@ namespace Timecoder.Network.Models
             TokenString = tokenString;
             Version = version;
         }
+
+        public override string ToString() => $"{Version} {TokenString}";
     }
 }

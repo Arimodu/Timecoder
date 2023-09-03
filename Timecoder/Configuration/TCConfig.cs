@@ -12,19 +12,19 @@ namespace Timecoder.Configuration
     {
         public event Action<TCConfig> OnChanged;
 
-        public string BaseUrl { get; set; } = "https://timecoder.dduel.dev";
-        public string SessionEndpoint { get; set; } = "/api/v0/integration/me";
-        public string EventPush { get; set; } = "/api/v0/event/push";
-        public string SubEventPush { get; set; } = "/api/v0/subEvent/push";
+        public virtual string BaseUrl { get; set; } = "https://timecoder.dduel.dev";
+        public virtual string SessionEndpoint { get; set; } = "/api/v0/integration/me";
+        public virtual string EventPush { get; set; } = "/api/v0/event/push";
+        public virtual string SubEventPush { get; set; } = "/api/v0/subEvent/push";
 
         [UseConverter(typeof(UserTokenConverter))]
-        public UserToken Token { get; set; } = new UserToken("mocktoken", "IntegrationV0");
+        public virtual UserToken Token { get; set; } = new UserToken("mocktoken", "IntegrationV0");
 
-        public string GetSessionURI() => $"{BaseUrl}{SessionEndpoint}";
+        public virtual string GetSessionURI() => $"{BaseUrl}{SessionEndpoint}";
 
-        public string GetEventPushURI() => $"{BaseUrl}{EventPush}";
+        public virtual string GetEventPushURI() => $"{BaseUrl}{EventPush}";
 
-        public string GetSubEventPushURI() => $"{BaseUrl}{SubEventPush}";
+        public virtual string GetSubEventPushURI() => $"{BaseUrl}{SubEventPush}";
 
         /// <summary>
         /// Call this to force BSIPA to update the config file. This is also called by BSIPA if it detects the file was modified.
